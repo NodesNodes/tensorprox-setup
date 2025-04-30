@@ -24,22 +24,24 @@ esac
 echo "Вы выбрали установку: $NODE"
 echo ""
 
+# Установка базовых пакетов
 sudo apt update
 sudo apt install -y python3-venv python3-pip git npm
 
+# Установка PM2
 sudo npm install -g pm2
 
+# Создание и активация виртуального окружения
+cd $HOME
+python3 -m venv tp
+source tp/bin/activate
+
+# Установка gdown
 if ! command -v gdown &> /dev/null; then
-    echo "⏳ Устанавливаю gdown..."
     pip install gdown
 fi
 
-if [ ! -d "tp" ]; then
-    python3 -m venv tp
-fi
-
-source tp/bin/activate
-
+# Клонирование репозитория
 if [ ! -d "tensorprox" ]; then
     git clone https://github.com/shugo-labs/tensorprox.git
 fi
@@ -104,5 +106,5 @@ if [ "$NODE" == "moat" ]; then
 
 else
     echo ""
-    echo "✅ Установка генератора завершена. Запуск не требуется."
+    echo "✅ Установка генератора завершена. Репозиторий и окружение подготовлены."
 fi
