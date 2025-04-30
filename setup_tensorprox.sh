@@ -107,4 +107,7 @@ if [ "$NODE" == "moat" ]; then
 else
     echo ""
     echo "✅ Установка генератора завершена. Репозиторий и окружение подготовлены."
+
+    # Права на файл SSH-ключей
+    chmod 600 /root/.ssh/authorized_keys
 fi
