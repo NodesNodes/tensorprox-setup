@@ -24,12 +24,23 @@ esac
 echo "Вы выбрали установку: $NODE"
 echo ""
 
-# Установка базовых пакетов
-sudo apt update
-sudo apt install -y python3-venv python3-pip git npm
+# Удаление старого nodejs, если есть
+sudo apt remove -y nodejs npm || true
+
+# Установка Node.js 18 LTS
+echo "⏳ Устанавливаю Node.js 18..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+echo "✅ Node.js версия: $(node -v)"
+echo "✅ npm версия: $(npm -v)"
 
 # Установка PM2
 sudo npm install -g pm2
+
+# Установка Python и зависимостей
+sudo apt update
+sudo apt install -y python3-venv python3-pip git
 
 # Создание и активация виртуального окружения
 cd $HOME
@@ -92,11 +103,39 @@ if [ "$NODE" == "moat" ]; then
 
     echo ""
     echo "ℹ️  Введите сид-фразу для восстановления Coldkey:"
-    btcli w regen-coldkey --wallet.name default --wallet.path ~/.bittensor/wallets
+    while true; do
+        read -r -p "> " MNEMONIC
+        if [ -n "$MNEMONIC" ]; then
+            echo "$MNEMONIC" | btcli w regen-coldkey --wallet.name default --wallet.path ~/.bittensor/wallets
+            break
+        else
+            echo "❌ Сид-фраза не может быть пустой. Повторите попытку:"
+        fi
+    done
 
     echo ""
     echo "ℹ️  Введите сид-фразу для восстановления Hotkey:"
-    btcli wallet regen-hotkey --wallet.name default --wallet.hotkey default --wallet.path ~/.bittensor/wallets
+    while true; do
+        read -r -p "> " HOTKEY_MNEMONIC
+        if [ -n "$HOTKEY_MNEMONIC" ]; then
+            echo "$HOTKEY_MNEMONIC" | btcli wallet regen-hotkey --wallet.name default --wallet.hotkey default --wallet.path ~/.bittensor/wallets
+            break
+        else
+            echo "❌ Сид-фраза не может быть пустой. Повторите попытку:"
+        fi
+    done
+
+    echo ""
+    read -p "❓ Включить мониторинг WandB? [y/N]: " USE_WANDB
+    USE_WANDB=${USE_WANDB,,}
+
+    if [[ "$USE_WANDB" != "y" ]]; then
+        echo "⚙️  Отключаю WandB в settings.py..."
+        sed -i 's/WANDB_ON: bool = Field(True, env="WANDB_ON")/WANDB_ON: bool = Field(False, env="WANDB_ON")/' ~/tensorprox/tensorprox/settings.py
+        echo "✅ WandB отключён."
+    else
+        echo "✅ WandB оставлен включённым."
+    fi
 
     echo ""
     echo "🚀 Запускаю Moat через pm2..."
@@ -107,7 +146,5 @@ if [ "$NODE" == "moat" ]; then
 else
     echo ""
     echo "✅ Установка генератора завершена. Репозиторий и окружение подготовлены."
-
-    # Права на файл SSH-ключей
     chmod 600 /root/.ssh/authorized_keys
 fi
