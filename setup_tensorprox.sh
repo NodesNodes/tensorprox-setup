@@ -24,7 +24,17 @@ esac
 echo "Вы выбрали установку: $NODE"
 echo ""
 
-# Удаление старого nodejs, если есть
+# Отключение needrestart: авто-перезапуск служб
+echo "⏳ Настраиваю needrestart для авто-режима..."
+sudo sed -i 's/^#\?\$nrconf{restart}.*/$nrconf{restart} = '\''a'\'';/' /etc/needrestart/needrestart.conf \
+    || echo "\$nrconf{restart} = 'a';" | sudo tee -a /etc/needrestart/needrestart.conf > /dev/null
+echo "✅ needrestart переведён в авто-режим."
+
+# Установка системных пакетов
+sudo apt update
+sudo apt install -y python3-venv python3-pip git
+
+# Удаление старого Node.js, если есть
 sudo apt remove -y nodejs npm || true
 
 # Установка Node.js 18 LTS
@@ -37,10 +47,6 @@ echo "✅ npm версия: $(npm -v)"
 
 # Установка PM2
 sudo npm install -g pm2
-
-# Установка Python и зависимостей
-sudo apt update
-sudo apt install -y python3-venv python3-pip git
 
 # Создание и активация виртуального окружения
 cd $HOME
